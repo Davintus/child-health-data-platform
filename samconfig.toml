@@ -4,6 +4,6 @@ version = 0.1
 stack_name = "child-health-data-platform"  
 s3_bucket = "child-health-data-bucket"  # Replace with your actual bucket name  
 # s3_prefix = "your-s3-prefix"        # Optional, set if needed  
-region = "us-east-1"  
+region = "eu-west-1"  
 confirm_changeset = true  
 capabilities = "CAPABILITY_IAM"
