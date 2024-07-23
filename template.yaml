@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'  
+Transform: AWS::Serverless-2016-10-31  
+Description: Serverless Child Health Data Processing Platform  
+
+Resources:  
+  HealthDataBucket:  
+      Type: AWS::S3::Bucket  
+          Properties:  
+	        BucketName: child-health-data-bucket  
+
+		  HealthProcessingFunction:  
+		      Type: AWS::Serverless::Function  
+		          Properties:  
+			        Handler: health_process.lambda_handler  
+				      Runtime: python3.8  
+				            Policies:  
+					            - S3ReadPolicy:  
+						                BucketName: !Ref HealthDataBucket  
+								        - DynamoDBFullAccess  
+									      Environment:  
+									              DYNAMODB_TABLE: !Ref HealthDataTable  
+										            Events:  
+											            S3Upload:  
+												              Type: S3  
+													                Properties:  
+															            Bucket: !Ref HealthDataBucket  
+																                Events:   
+																		              - s3:ObjectCreated:Put  
+
+																			        HealthProcessingStateMachine:  
+																				    Type: AWS::StepFunctions::StateMachine  
+																				        Properties:  
+																					      DefinitionString: !Sub |  
+																					              {  
+																						                "Comment": "Health Data Processing Workflow",  
+																								          "StartAt": "ProcessHealthData",  
+																									            "States": {  
+																										                "ProcessHealthData": {  
+																												              "Type": "Task",  
+																													                    "Resource": "${HealthProcessingFunction.Arn}",  
+																															                  "End": true  
+																																	              }  
+																																		                }  
+																																				        }  
+
+																																					  HealthDataTable:  
+																																					      Type: AWS::DynamoDB::Table  
+																																					          Properties:  
+																																						        TableName: HealthData  
+																																							      AttributeDefinitions:  
+																																							              - AttributeName: id  
+																																								                AttributeType: S  
+																																										      KeySchema:  
+																																										              - AttributeName: id  
+																																											                KeyType: HASH  
+																																													      ProvisionedThroughput:  
+																																													              ReadCapacityUnits: 5  
+																																														              WriteCapacityUnits: 5  
+																																															            
+																																																      HealthDataApi:  
+																																																          Type: AWS::Serverless::Api  
+																																																	      Properties:  
+																																																	            StageName: prod  
+
+																																																		    Outputs:  
+																																																		      HealthDataBucketName:  
+																																																		          Value: !Ref HealthDataBucket  
+																																																			      Description: S3 Bucket for health data  
+																																																			        HealthDataApiEndpoint:  
+																																																				    Value: !Sub "https://${HealthDataApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"  
+																																																				        Description: API endpoint
