@@ -17,12 +17,9 @@ jobs:
         with:  
           python-version: '3.8'  
 
-      - name: Install AWS CLI  
+      - name: Install dependencies  
         run: |  
           pip install awscli  
-
-      - name: Install AWS SAM CLI  
-        run: |  
           pip install aws-sam-cli  
       
       - name: Configure AWS Credentials  
@@ -32,7 +29,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
           aws-region: us-east-1  
 
-      - name: Build and Deploy  
+      - name: Build  
         run: |  
           sam build  
-          sam deploy --no-confirm-changeset --guided
+
+      - name: Deploy  
+        run: |  
+          sam deploy  # Removed --guided
