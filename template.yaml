@@ -6,7 +6,21 @@ Resources:
   HealthDataBucket:  
     Type: AWS::S3::Bucket  
     Properties:  
-      BucketName: child-health-data-bucket  
+      BucketName: child-health-data-bucket-${AWS::AccountId}  # Ensure global uniqueness  
+
+  HealthDataTable:  
+    Type: AWS::DynamoDB::Table  
+    Properties:  
+      TableName: HealthData  
+      AttributeDefinitions:  
+        - AttributeName: id  
+          AttributeType: S  
+      KeySchema:  
+        - AttributeName: id  
+          KeyType: HASH  
+      ProvisionedThroughput:  
+        ReadCapacityUnits: 5  
+        WriteCapacityUnits: 5  
 
   HealthProcessingFunction:  
     Type: AWS::Serverless::Function  
@@ -16,7 +30,14 @@ Resources:
       Policies:  
         - S3ReadPolicy:  
             BucketName: !Ref HealthDataBucket  
-        - DynamoDBFullAccess  
+        - Version: "2012-10-17"  # required for inline IAM policies  
+          Statement:  
+            - Effect: Allow  
+              Action:  
+                - dynamodb:PutItem  
+                - dynamodb:GetItem  
+                - dynamodb:UpdateItem  
+              Resource: !GetAtt HealthDataTable.Arn  
       Environment:  
         DYNAMODB_TABLE: !Ref HealthDataTable  
       Events:  
@@ -43,20 +64,6 @@ Resources:
           }  
         }  
 
-  HealthDataTable:  
-    Type: AWS::DynamoDB::Table  
-    Properties:  
-      TableName: HealthData  
-      AttributeDefinitions:  
-        - AttributeName: id  
-          AttributeType: S  
-      KeySchema:  
-        - AttributeName: id  
-          KeyType: HASH  
-      ProvisionedThroughput:  
-        ReadCapacityUnits: 5  
-        WriteCapacityUnits: 5  
-      
   HealthDataApi:  
     Type: AWS::Serverless::Api  
     Properties:  
@@ -66,6 +73,7 @@ Outputs:
   HealthDataBucketName:  
     Value: !Ref HealthDataBucket  
     Description: S3 Bucket for health data  
+
   HealthDataApiEndpoint:  
     Value: !Sub "https://${HealthDataApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"  
     Description: API endpoint
