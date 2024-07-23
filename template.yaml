@@ -27,17 +27,6 @@ Resources:
     Properties:  
       Handler: health_process.lambda_handler  
       Runtime: python3.8  
-      Policies:  
-        - S3ReadPolicy:  
-            BucketName: !Ref HealthDataBucket  
-        - Version: "2012-10-17"  # required for inline IAM policies  
-          Statement:  
-            - Effect: Allow  
-              Action:  
-                - dynamodb:PutItem  
-                - dynamodb:GetItem  
-                - dynamodb:UpdateItem  
-              Resource: !GetAtt HealthDataTable.Arn  
       Environment:  
         DYNAMODB_TABLE: !Ref HealthDataTable  
       Events:  
