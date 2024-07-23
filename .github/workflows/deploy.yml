@@ -35,4 +35,4 @@ jobs:
 
       - name: Deploy  
         run: |  
-          sam deploy --stack-name HealthDataStack --capabilities CAPABILITY_IAM # Removed --guided
+          sam deploy --no-confirm-changeset --stack-name HealthDataStack --s3-bucket child-health-data-bucket --capabilities CAPABILITY_IAM # Removed --guided
