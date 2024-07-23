@@ -35,4 +35,4 @@ jobs:
 
       - name: Deploy  
         run: |  
-          sam deploy  # Removed --guided
+          sam deploy --stack-name HealthDataStack --capabilities CAPABILITY_IAM # Removed --guided
