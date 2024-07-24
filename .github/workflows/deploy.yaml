@@ -39,8 +39,7 @@ jobs:
     # Step 5: Package SAM  
     - name: Package SAM  
       run: |  
-        sam package --template-file template.yaml --s3-bucket child-health-data-bucket --output-template-file output.yaml  
-
+        sam package --template-file template.yaml --s3-bucket child-health-data-bucket --s3-prefix your-code --output-template-file output.yaml
     # Step 6: Deploy SAM - create changeset without executing  
     - name: Deploy SAM  
       id: deploy  
