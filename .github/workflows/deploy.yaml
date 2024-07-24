@@ -39,14 +39,23 @@ jobs:
     # Step 5: Package SAM  
     - name: Package SAM  
       run: |  
-        sam package --template-file template.yaml --s3-bucket child-health-data-bucket --s3-prefix your-code --output-template-file output.yaml
-    # Step 6: Deploy SAM - create changeset without executing  
+        PACKAGE_OUTPUT=$(sam package --template-file template.yaml --s3-bucket ${{ secrets.S3_BUCKET_NAME }} --output-template-file packaged.yaml)
+        echo "$PACKAGE_OUTPUT"
+        S3_KEY=$(echo "$PACKAGE_OUTPUT" | grep -oP '(?<=Uploading to ).*(?=\.\.\.)')
+        echo "S3_KEY=$S3_KEY" >> $GITHUB_ENV
+
+    # Step 6: Update SAM template with the S3 key
+    - name: Update SAM template with S3 key
+      run: |
+        sed -i "s/your-code.zip/${{ env.S3_KEY }}/g" packaged.yaml
+        
+    # Step 7: Deploy SAM - create changeset without executing  
     - name: Deploy SAM  
       id: deploy  
       run: |  
         sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-changeset --no-fail-on-empty-changeset --parameter-overrides DynamoDBTable=child-health-data-table  
 
-    # Step 7: Get ChangeSet Name  
+    # Step 8: Get ChangeSet Name  
     - name: Get ChangeSet Name  
       id: get_changeset  
       run: |  
@@ -54,7 +63,7 @@ jobs:
         echo "ChangeSet Name: $CHANGES"  
         echo "::set-output name=changeset::$CHANGES"  
 
-    # Step 8: Check ChangeSet Status  
+    # Step 9: Check ChangeSet Status  
     - name: Check ChangeSet Status  
       id: check_changeset_status  
       run: |  
@@ -67,8 +76,8 @@ jobs:
           exit 1  
         fi  
 
-    # Step 9: Execute ChangeSet  
+    # Step 10: Execute ChangeSet  
     - name: Execute ChangeSet  
       run: |  
-        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"   
-        aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform  
+        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"
+        aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform
