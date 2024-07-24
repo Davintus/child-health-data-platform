@@ -43,6 +43,5 @@ on:
 
         # Step 6: Deploy SAM  
         - name: Deploy SAM  
-          run: |  
-            set -e  
+          run: |
             sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --confirm-changeset --no-fail-on-empty-changeset
