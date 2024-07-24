@@ -5,7 +5,8 @@ Description: SAM Template for Child Health Data Platform
 Parameters:  
   S3Bucket:  
     Type: String  
-    Default: child-health-data-bucket  
+    Default: !Sub "child-health-data-bucket-${AWS::AccountId}-${AWS::Region}"  # Ensure the bucket name is unique  
+    Description: "Unique S3 bucket name for the application."  
 
 Resources:  
   DataBucket:  
