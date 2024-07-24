@@ -32,7 +32,7 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       
   # Lambda Function  
-    DataHandlerFunction:  
+  DataHandlerFunction:  
     Type: AWS::Lambda::Function  
     Properties:  
       FunctionName: MyDataHandlerFunction  
