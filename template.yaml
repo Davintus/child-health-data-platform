@@ -30,6 +30,11 @@ Resources:
         - AttributeName: id  
           KeyType: HASH  
       BillingMode: PAY_PER_REQUEST
+
+  LambdaDeploymentPackage:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3Bucket
       
   # Lambda Function  
   DataHandlerFunction:  
@@ -40,7 +45,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn  
       Code:  
         S3Bucket: !Ref S3Bucket  
-        S3Key: your-code.zip  
+        S3Key: !Sub '${LambdaDeploymentPackage}/${MyDataHandlerFunction.Version}'  
       Runtime: python3.8  
       Environment:
         Variables:
