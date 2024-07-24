@@ -30,11 +30,6 @@ Resources:
         - AttributeName: id  
           KeyType: HASH  
       BillingMode: PAY_PER_REQUEST
-
-  LambdaDeploymentPackage:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref S3Bucket
       
   # Lambda Function  
   DataHandlerFunction:  
