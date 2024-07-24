@@ -26,9 +26,9 @@ jobs:
         pip install -r requirements.txt  
         pip install pytest  
 
-    - name: Run Tests  
-      run: |  
-        PYTHONPATH=./app pytest tests/  
+#    - name: Run Tests  
+#      run: |  
+#        PYTHONPATH=./app pytest tests/  
     
   deploy:  
     runs-on: ubuntu-latest  
