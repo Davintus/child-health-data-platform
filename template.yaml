@@ -32,21 +32,21 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       
   # Lambda Function  
-  DataHandlerFunction:  
+    DataHandlerFunction:  
     Type: AWS::Lambda::Function  
     Properties:  
       FunctionName: MyDataHandlerFunction  
       Handler: index.handler  
       Role: !GetAtt LambdaExecutionRole.Arn  
       Code:  
-        S3Bucket: !Ref S3Bucket          # Make sure this references the existing S3 bucket parameter  
-        S3Key: your-code.zip             # The S3 key where the code is stored  
-      Runtime: python3.8                # Specify the runtime you're using  
+        S3Bucket: !Ref S3Bucket  
+        S3Key: your-code.zip  
+      Runtime: python3.8  
       Environment:
-      Variables:
-        S3_BUCKET: !Ref S3Bucket               # Ensure this is a defined parameter
-        DYNAMODB_TABLE: !Ref DynamoDBTableName # Ensure this is a defined parameter  
-      Timeout: 30                        # Adjust timeout as needed
+        Variables:
+          S3_BUCKET: !Ref S3Bucket
+          DYNAMODB_TABLE: !Ref DynamoDBTable  # Corrected from DynamoDBTableName to DynamoDBTable
+      Timeout: 30
   
   LambdaExecutionRole:
     Type: AWS::IAM::Role
