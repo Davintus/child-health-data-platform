@@ -42,9 +42,10 @@ Resources:
         S3Bucket: !Ref S3Bucket          # Make sure this references the existing S3 bucket parameter  
         S3Key: your-code.zip             # The S3 key where the code is stored  
       Runtime: python3.8                # Specify the runtime you're using  
-      Environment:  
-        S3_BUCKET: !Ref S3Bucket         # Ensure this is a defined parameter  
-        DYNAMODB_TABLE: !Ref DynamoDBTable # Ensure this is a defined parameter  
+      Environment:
+      Variables:
+        S3_BUCKET: !Ref S3Bucket               # Ensure this is a defined parameter
+        DYNAMODB_TABLE: !Ref DynamoDBTableName # Ensure this is a defined parameter  
       Timeout: 30                        # Adjust timeout as needed
   
   LambdaExecutionRole:
