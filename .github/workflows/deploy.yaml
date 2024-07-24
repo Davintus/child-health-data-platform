@@ -45,7 +45,7 @@ jobs:
     - name: Deploy SAM  
       id: deploy  
       run: |  
-        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-changeset --no-fail-on-empty-changeset  
+        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-changeset --no-fail-on-empty-changeset --parameter-overrides DynamoDBTable=child-health-data-table  
 
     # Step 7: Get ChangeSet Name  
     - name: Get ChangeSet Name  
