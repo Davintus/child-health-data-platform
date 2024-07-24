@@ -5,14 +5,14 @@ Description: SAM Template for Child Health Data Platform
 Parameters:  
   S3Bucket:  
     Type: String  
-    Default: !Sub "child-health-data-bucket-${AWS::AccountId}-${AWS::Region}"  # Ensure the bucket name is unique  
-    Description: "Unique S3 bucket name for the application."  
+    Default: "child-health-data-bucket-static-default"  # Provide a static default name  
+    Description: "Unique S3 bucket name for the application. Ensure it's globally unique."  
 
 Resources:  
   DataBucket:  
     Type: AWS::S3::Bucket  
     Properties:   
-      BucketName: !Ref S3Bucket  
+      BucketName: !Ref S3Bucket  # Use the parameter for the bucket name  
 
   DynamoDBTable:  
     Type: AWS::DynamoDB::Table  
