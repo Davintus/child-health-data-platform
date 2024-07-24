@@ -9,7 +9,8 @@ Parameters:
     Description: "Unique S3 bucket name for the application. Ensure it's globally unique."
     
   DynamoDBTable:  
-    Type: String  
+    Type: String
+    Default: "child-health-data-table"
     Description: "The DynamoDB table name for storing application data."  
 
 Resources:  
