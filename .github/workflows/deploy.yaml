@@ -28,7 +28,7 @@ jobs:
 
     - name: Run Tests  
       run: |  
-        pytest tests/  
+        PYTHONPATH=./app pytest tests/  
     
   deploy:  
     runs-on: ubuntu-latest  
@@ -47,4 +47,4 @@ jobs:
 
     - name: Deploy SAM  
       run: |  
-        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --confirm-changeset
+        sam deploy --template-file output.yaml --stack-name child-health-data
