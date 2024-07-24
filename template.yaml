@@ -26,28 +26,29 @@ Resources:
           KeyType: HASH  
       BillingMode: PAY_PER_REQUEST  
       
-  # Lambda Function  
-  DataHandlerFunction:  
-    Type: AWS::Serverless::Function  
-    Properties:  
-      Handler: app.app.handler  
-      Runtime: python3.8  
-      CodeUri: app/  
-      MemorySize: 128  
-      Timeout: 30  
-      Environment:  
+  # Lambda Function
+DataHandlerFunction:  
+  Type: AWS::Serverless::Function  
+  Properties:  
+    Handler: app.app.handler  
+    Runtime: python3.8  
+    CodeUri: app/  
+    MemorySize: 128  
+    Timeout: 30  
+    Environment:  
+      Variables:  
         DYNAMODB_TABLE: !Ref DynamoDBTable  
         S3_BUCKET: !Ref S3Bucket  
-      Policies:  
-        - Statement:  
-            - Effect: Allow  
-              Action:  
-                - dynamodb:PutItem  
-              Resource: !GetAtt DynamoDBTable.Arn  
-            - Effect: Allow  
-              Action:  
-                - s3:PutObject  
-              Resource: !Sub "${DataBucket.Arn}/*"  
+    Policies:  
+      - Statement:  
+          - Effect: Allow  
+            Action:  
+              - dynamodb:PutItem  
+            Resource: !GetAtt DynamoDBTable.Arn  
+          - Effect: Allow  
+            Action:  
+              - s3:PutObject  
+            Resource: !Sub "${DataBucket.Arn}/*"  
   
   # API Gateway  
   MyApiGateway:  
