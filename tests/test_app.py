@@ -1,17 +1,17 @@
 import boto3  
-from moto import mock_dynamodb2  
+from moto import mock_dynamodb  
 import pytest  
 from app.app import handler  # Adjust this import as necessary  
 
-@mock_dynamodb2  
+@mock_dynamodb  
 def test_handler():  
     # Set up your mock DynamoDB table here  
-    dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')  # Specify the region if needed  
+    dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')  
     # Create a mock table  
-    dynamodb.create_table(  
+    table = dynamodb.create_table(  
         TableName='YourTableName',  
         KeySchema=[  
-            {'AttributeName': 'id', 'KeyType': 'HASH'},  # Partition key  
+            {'AttributeName': 'id', 'KeyType': 'HASH'},  
         ],  
         AttributeDefinitions=[  
             {'AttributeName': 'id', 'AttributeType': 'S'},  
@@ -23,5 +23,5 @@ def test_handler():
     )  
 
     # Call your handler function or whatever you need to test  
-    result = handler(...)  # Pass appropriate arguments  
+    result = handler(...)  # Pass appropriate arguments to your handler  
     assert result == {...}  # Update with expected results
