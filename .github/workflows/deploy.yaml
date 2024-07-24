@@ -13,38 +13,35 @@ jobs:
     runs-on: ubuntu-latest  
 
     steps:  
+    # Step 1: Check out code  
     - name: Check out code  
       uses: actions/checkout@v2  
 
-    - name: Set up Python  
-      uses: actions/setup-python@v2  
-      with:  
-        python-version: '3.8'  
-
-    - name: Install dependencies  
+    # Step 2: Install AWS SAM CLI  
+    - name: Install AWS SAM CLI  
       run: |  
-        pip install -r requirements.txt  
-        pip install pytest  
+        sudo apt-get update  
+        sudo apt-get install -y python3-pip  
+        pip3 install aws-sam-cli  
 
-#    - name: Run Tests  
-#      run: |  
-#        PYTHONPATH=./app pytest tests/  
-    
-  deploy:  
-    runs-on: ubuntu-latest  
-    needs: build  
-    steps:  
-    - name: AWS CLI  
+    # Step 3: List project files for debugging  
+    - name: List project files  
+      run: ls -R  
+
+    # Step 4: Configure AWS credentials  
+    - name: Configure AWS credentials  
       uses: aws-actions/configure-aws-credentials@v1  
       with:  
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
         aws-region: 'eu-west-1'  
-
+    
+    # Step 5: Package SAM  
     - name: Package SAM  
       run: |  
         sam package --template-file template.yaml --s3-bucket child-health-data-bucket --output-template-file output.yaml  
 
+    # Step 6: Deploy SAM  
     - name: Deploy SAM  
       run: |  
-        sam deploy --template-file output.yaml --stack-name child-health-data
+        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --confirm-changeset
