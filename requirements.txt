@@ -1,6 +1,3 @@
 boto3
-<<<<<<< HEAD
-=======
 pytest
 request
->>>>>>> origin/main
