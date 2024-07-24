@@ -48,6 +48,13 @@ Resources:
                 - s3:PutObject  
               Resource: !Sub "${DataBucket.Arn}/*"  
   
+  # API Gateway  
+  MyApiGateway:  
+    Type: AWS::ApiGateway::RestApi  
+    Properties:  
+      Name: ChildHealthDataAPI  
+      Description: API for Child Health Data Collection  
+
   # Step Function  
   ChildHealthWorkflow:  
     Type: AWS::StepFunctions::StateMachine  
@@ -104,4 +111,4 @@ Resources:
 Outputs:  
   ApiGatewayURL:  
     Description: "API Gateway endpoint URL"  
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "https://${MyApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
