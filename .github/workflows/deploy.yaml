@@ -47,19 +47,29 @@ jobs:
       run: |  
         sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-changeset --no-fail-on-empty-changeset  
 
-    # Step 7: Get changeset name  
+    # Step 7: Get ChangeSet Name  
     - name: Get ChangeSet Name  
-      id: get_changeset  # Ensuring the step ID matches in output reference  
+      id: get_changeset  
       run: |  
         CHANGES="$(aws cloudformation list-change-sets --stack-name child-health-data-platform --query "Summaries[0].ChangeSetId" --output text)"  
         echo "ChangeSet Name: $CHANGES"  
         echo "::set-output name=changeset::$CHANGES"  
 
-    # Step 8: Execute ChangeSet  
-    - name: Execute ChangeSet  
+    # Step 8: Check ChangeSet Status  
+    - name: Check ChangeSet Status  
+      id: check_changeset_status  
       run: |  
-        if [ -z "${{ steps.get_changeset.outputs.changeset }}" ]; then  
-          echo "No changeset found to execute."  
+        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"  
+        STATUS="$(aws cloudformation describe-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform --query "Status" --output text)"  
+        echo "ChangeSet Status: $STATUS"  
+        
+        if [ "$STATUS" != "CREATE_COMPLETE" ]; then  
+          echo "ChangeSet is not in a valid state to execute. Current status: $STATUS"  
           exit 1  
         fi  
-        aws cloudformation execute-change-set --change-set-name ${{ steps.get_changeset.outputs.changeset }} --stack-name child-health-data-platform
+
+    # Step 9: Execute ChangeSet  
+    - name: Execute ChangeSet  
+      run: |  
+        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"   
+        aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform  
