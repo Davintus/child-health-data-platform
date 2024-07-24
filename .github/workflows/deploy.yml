@@ -1,38 +1,40 @@
-name: Deploy to AWS  
+name: CI/CD Pipeline  
 
 on:  
   push:  
     branches:  
-      - main  
+      - main  # Change to your desired branch  
+  pull_request:  
+    branches:  
+      - main  # Change to your desired branch  
 
 jobs:  
-  deploy:  
+  build:  
     runs-on: ubuntu-latest  
+
     steps:  
-      - name: Checkout code  
+      - name: Check out code  
         uses: actions/checkout@v2  
-        
-      - name: Set up Python 3.8  
+
+      - name: Set up Python  
         uses: actions/setup-python@v2  
         with:  
           python-version: '3.8'  
 
       - name: Install dependencies  
         run: |  
-          pip install awscli  
-          pip install aws-sam-cli  
+          cd hello_world  
+          python -m pip install -r requirements.txt --target ./package  
+          cd package && zip -r ../function.zip . && cd ..  
       
-      - name: Configure AWS Credentials  
-        uses: aws-actions/configure-aws-credentials@v1  
-        with:  
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
-          aws-region: eu-west-1  
-
-      - name: Build  
+      - name: Package serverless application  
         run: |  
-          sam build  
+          sam package --output-template-file packaged.yaml --s3-bucket child-health-data-bucket  
 
-      - name: Deploy  
+      - name: Deploy serverless application  
         run: |  
-          sam deploy --no-confirm-changeset --stack-name HealthDataStack --s3-bucket child-health-data-bucket --capabilities CAPABILITY_IAM # Removed --guided
+          sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM  
+        env:  
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
+          AWS_DEFAULT_REGION: eu-west-1
