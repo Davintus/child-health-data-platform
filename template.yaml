@@ -6,7 +6,11 @@ Parameters:
   S3Bucket:  
     Type: String  
     Default: "child-health-data-bucket-static-default"  # Provide a static default name  
-    Description: "Unique S3 bucket name for the application. Ensure it's globally unique."  
+    Description: "Unique S3 bucket name for the application. Ensure it's globally unique."
+    
+  DynamoDBTable:  
+    Type: String  
+    Description: "The DynamoDB table name for storing application data."  
 
 Resources:  
   DataBucket:  
@@ -27,28 +31,21 @@ Resources:
       BillingMode: PAY_PER_REQUEST  
       
   # Lambda Function
+  Resources:  
   DataHandlerFunction:  
-  Type: AWS::Serverless::Function  
-  Properties:  
-    Handler: app.app.handler  
-    Runtime: python3.8  
-    CodeUri: app/  
-    MemorySize: 128  
-    Timeout: 30  
-    Environment:  
-      Variables:  
-        DYNAMODB_TABLE: !Ref DynamoDBTable  
-        S3_BUCKET: !Ref S3Bucket  
-    Policies:  
-      - Statement:  
-          - Effect: Allow  
-            Action:  
-              - dynamodb:PutItem  
-            Resource: !GetAtt DynamoDBTable.Arn  
-          - Effect: Allow  
-            Action:  
-              - s3:PutObject  
-            Resource: !Sub "${DataBucket.Arn}/*"
+    Type: AWS::Lambda::Function  
+    Properties:  
+      FunctionName: MyDataHandlerFunction  
+      Handler: index.handler  
+      Role: !GetAtt LambdaExecutionRole.Arn  
+      Code:  
+        S3Bucket: !Ref S3Bucket          # Make sure this references the existing S3 bucket parameter  
+        S3Key: your-code.zip             # The S3 key where the code is stored  
+      Runtime: nodejs14.x                # Specify the runtime you're using  
+      Environment:  
+        S3_BUCKET: !Ref S3Bucket         # Ensure this is a defined parameter  
+        DYNAMODB_TABLE: !Ref DynamoDBTable # Ensure this is a defined parameter  
+      Timeout: 30                        # Adjust timeout as needed
   
   # API Gateway  
   MyApiGateway:  
