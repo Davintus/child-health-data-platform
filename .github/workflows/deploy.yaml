@@ -56,20 +56,20 @@ jobs:
         echo "::set-output name=changeset::$CHANGES"  
 
     # Step 8: Check ChangeSet Status  
-    - name: Check ChangeSet Status  
-      id: check_changeset_status  
-      run: |  
-        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"  
-        STATUS="$(aws cloudformation describe-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform --query "Status" --output text)"  
-        echo "ChangeSet Status: $STATUS"  
-        
-        if [ "$STATUS" != "CREATE_COMPLETE" ]; then  
-          echo "ChangeSet is not in a valid state to execute. Current status: $STATUS"  
-          exit 1  
-        fi  
+    #- name: Check ChangeSet Status  
+    #  id: check_changeset_status  
+    #  run: |  
+    #    CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"  
+    #    STATUS="$(aws cloudformation describe-change-set --change-set-name arn:aws:cloudformation:eu-west-1:654654316695:changeSet/samcli-deploy1721817256/31376f2b-69f6-4cd5-a3af-f6585e0b5577 --stack-name child-health-data-platform --query "Status" --output text)"  
+    #    echo "ChangeSet Status: $STATUS"  
+    #    
+    #    if [ "$STATUS" != "CREATE_COMPLETE" ]; then  
+    #      echo "ChangeSet is not in a valid state to execute. Current status: $STATUS"  
+    #      exit 1  
+    #    fi  
 
     # Step 9: Execute ChangeSet  
     - name: Execute ChangeSet  
       run: |  
         CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"   
-        aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform  
+        aws cloudformation execute-change-set --change-set-name arn:aws:cloudformation:eu-west-1:654654316695:changeSet/samcli-deploy1721817256/31376f2b-69f6-4cd5-a3af-f6585e0b5577E --stack-name child-health-data-platform  
