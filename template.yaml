@@ -1,48 +1,42 @@
 AWSTemplateFormatVersion: '2010-09-09'  
 Transform: AWS::Serverless-2016-10-31  
-Description: MVP for Global Child Health Project  
+Description: Serverless Data Platform for Child Health Project  
 
 Resources:  
-
   ApiGateway:  
     Type: AWS::Serverless::Api  
     Properties:  
       StageName: Prod  
-      Cors:  
-        AllowMethods: "'GET,POST,OPTIONS'"  
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"  
-        AllowOrigin: "'*'"  
 
-  IngestFunction:  
+  DataIngestionFunction:  
     Type: AWS::Serverless::Function  
     Properties:  
-      Handler: app.ingest_data  
+      Handler: app.handler  
       Runtime: python3.8  
+      CodeUri: ./app  
+      Policies:  
+        - AWSLambdaBasicExecutionRole  
+        - Version: '2012-10-17'  
+          Statement:  
+            - Effect: Allow  
+              Action:  
+                - "dynamodb:PutItem"  
+                - "s3:PutObject"            # Allow Lambda to put objects into S3  
+                - "glue:StartJobRun"        # Allow Lambda to start Glue jobs  
+              Resource:   
+                - !GetAtt DynamoDBTable.Arn  
+                - !Sub "arn:aws:s3:::${S3Bucket}"  
+                - !GetAtt GlueJob.Arn  
       Events:  
-        Api:  
+        IngestionApi:  
           Type: Api  
           Properties:  
             RestApiId: !Ref ApiGateway  
             Path: /ingest  
             Method: post  
+      DependsOn: DynamoDBTable  
 
-  ProcessFunction:  
-    Type: AWS::Serverless::Function  
-    Properties:  
-      Handler: app.process_data  
-      Runtime: python3.8  
-      Policies:  
-        - DynamoDBCrudPolicy:  
-            TableName: !Ref DataStore  
-      Environment:  
-        DATA_STORE: !Ref DataStore  
-      Events:  
-        SQSQueue:  
-          Type: SQS  
-          Properties:  
-            Queue: !Ref DataProcessingQueue  
-
-  DataStore:  
+  DynamoDBTable:  
     Type: AWS::DynamoDB::Table  
     Properties:  
       TableName: ChildHealthData  
@@ -54,13 +48,93 @@ Resources:
           KeyType: HASH  
       BillingMode: PAY_PER_REQUEST  
 
-  DataProcessingQueue:  
-    Type: AWS::SQS::Queue  
+  S3Bucket:  
+    Type: AWS::S3::Bucket  
+    Properties:  
+      BucketName: child-health-data-bucket  
 
-  NotificationTopic:  
-    Type: AWS::SNS::Topic  
+  GlueJob:  
+    Type: AWS::Glue::Job  
+    Properties:  
+      Name: ChildHealthDataProcessing  
+      Role: !GetAtt GlueExecutionRole.Arn  # Attach IAM Role to Glue Job  
+      Command:  
+        Name: glueetl           # The type of Glue Job  
+        ScriptLocation: !Sub "s3://${S3Bucket}/glue-scripts/child_health_data_processing.py"  # Your Glue script location in S3  
+      GlueVersion: '2.0'  
+      MaxRetries: 1  
+
+  GlueExecutionRole:  
+    Type: AWS::IAM::Role  
+    Properties:  
+      RoleName: GlueExecutionRole  
+      AssumeRolePolicyDocument:  
+        Version: '2012-10-17'  
+        Statement:  
+          - Effect: Allow  
+            Principal:  
+              Service: glue.amazonaws.com  
+            Action: sts:AssumeRole  
+      Policies:  
+        - PolicyName: GlueJobPolicy  
+          PolicyDocument:  
+            Version: '2012-10-17'  
+            Statement:  
+              - Effect: Allow  
+                Action:  
+                  - "s3:GetObject"  
+                  - "s3:PutObject"  
+                Resource:   
+                  - !Sub "arn:aws:s3:::${S3Bucket}/*"  
+                  - !Sub "arn:aws:s3:::${S3Bucket}"  
+
+  StepFunction:  
+    Type: AWS::StepFunctions::StateMachine  
+    Properties:  
+      DefinitionString: !Sub |  
+        {  
+          "Comment": "Child Health Project State Machine",  
+          "StartAt": "IngestData",  
+          "States": {  
+            "IngestData": {  
+              "Type": "Task",  
+              "Resource": "${DataIngestionFunction.Arn}",  
+              "Next": "ProcessData"  
+            },  
+            "ProcessData": {  
+              "Type": "Task",  
+              "Resource": "${GlueJob.Arn}",  
+              "End": true  
+            }  
+          }  
+        }  
+      RoleArn: !GetAtt StepFunctionExecutionRole.Arn   
+
+  StepFunctionExecutionRole:  
+    Type: AWS::IAM::Role  
+    Properties:  
+      RoleName: StepFunctionExecutionRole  
+      AssumeRolePolicyDocument:  
+        Version: '2012-10-17'  
+        Statement:  
+          - Effect: Allow  
+            Principal:  
+              Service: states.amazonaws.com  
+            Action: sts:AssumeRole  
+      Policies:  
+        - PolicyName: StepFunctionPolicy  
+          PolicyDocument:  
+            Version: '2012-10-17'  
+            Statement:  
+              - Effect: Allow  
+                Action:  
+                  - "lambda:InvokeFunction"  
+                  - "glue:StartJobRun"  
+                Resource:  
+                  - !GetAtt DataIngestionFunction.Arn  
+                  - !GetAtt GlueJob.Arn  
 
 Outputs:  
-  ApiUrl:  
-    Description: "API Gateway URL"  
+  ApiEndpoint:  
+    Description: "API Gateway endpoint URL for Prod stage"  
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
