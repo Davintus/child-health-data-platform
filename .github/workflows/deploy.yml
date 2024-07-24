@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies  
         run: |  
-          cd hello_world  
+          cd child-health-data-platform  
           python -m pip install -r requirements.txt --target ./package  
           cd package && zip -r ../function.zip . && cd ..  
       
