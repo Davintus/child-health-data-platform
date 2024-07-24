@@ -30,8 +30,7 @@ Resources:
           KeyType: HASH  
       BillingMode: PAY_PER_REQUEST  
       
-  # Lambda Function
-  Resources:  
+  # Lambda Function  
   DataHandlerFunction:  
     Type: AWS::Lambda::Function  
     Properties:  
@@ -41,7 +40,7 @@ Resources:
       Code:  
         S3Bucket: !Ref S3Bucket          # Make sure this references the existing S3 bucket parameter  
         S3Key: your-code.zip             # The S3 key where the code is stored  
-      Runtime: nodejs14.x                # Specify the runtime you're using  
+      Runtime: python3.8                # Specify the runtime you're using  
       Environment:  
         S3_BUCKET: !Ref S3Bucket         # Ensure this is a defined parameter  
         DYNAMODB_TABLE: !Ref DynamoDBTable # Ensure this is a defined parameter  
