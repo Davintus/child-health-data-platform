@@ -41,7 +41,20 @@ jobs:
       run: |  
         sam package --template-file template.yaml --s3-bucket child-health-data-bucket --output-template-file output.yaml  
 
-    # Step 6: Deploy SAM  
+    # Step 6: Deploy SAM - create changeset without executing  
     - name: Deploy SAM  
+      id: deploy  
       run: |  
-        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --confirm-changeset --no-fail-on-empty-changeset
+        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-change-set --no-fail-on-empty-changeset  
+
+    # Step 7: Get changeset name  
+    - name: Get ChangeSet Name  
+      run: |  
+        CHANGES="$(aws cloudformation list-change-sets --stack-name child-health-data-platform --query "Summaries[0].ChangeSetId" --output text)"  
+        echo "ChangeSet Name: $CHANGES"  
+        echo "::set-output name=changeset::$CHANGES"  
+
+    # Step 8: Execute ChangeSet  
+    - name: Execute ChangeSet  
+      run: |  
+        aws cloudformation execute-change-set --change-set-name ${{ steps.get_changeset.outputs.changeset }} --stack-name child-health-data-platform
