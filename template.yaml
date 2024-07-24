@@ -4,104 +4,104 @@ Description: SAM Template for Child Health Data Platform
 
 Parameters:  
   S3Bucket:  
-      Type: String  
-          Default: child-health-data-bucket  
+    Type: String  
+    Default: child-health-data-bucket  
 
-	  Resources:  
-	    DataBucket:  
-	        Type: AWS::S3::Bucket  
-		    Properties:   
-		          BucketName: !Ref S3Bucket  
+Resources:  
+  DataBucket:  
+    Type: AWS::S3::Bucket  
+    Properties:   
+      BucketName: !Ref S3Bucket  
 
-			    DynamoDBTable:  
-			        Type: AWS::DynamoDB::Table  
-				    Properties:  
-				          TableName: ChildHealthData  
-					        AttributeDefinitions:  
-						        - AttributeName: id  
-							          AttributeType: S  
-								        KeySchema:  
-									        - AttributeName: id  
-										          KeyType: HASH  
-											        BillingMode: PAY_PER_REQUEST  
-												      
-												        # Lambda Function  
-													  DataHandlerFunction:  
-													      Type: AWS::Serverless::Function  
-													          Properties:  
-														        Handler: app.app.handler  
-															      Runtime: python3.8  
-															            CodeUri: app/  
-																          MemorySize: 128  
-																	        Timeout: 30  
-																		      Environment:  
-																		              DYNAMODB_TABLE: !Ref DynamoDBTable  
-																			              S3_BUCKET: !Ref S3Bucket  
-																				            Policies:  
-																					            - Statement:  
-																						                - Effect: Allow  
-																								              Action:  
-																									                      - dynamodb:PutItem  
-																											                    Resource: !GetAtt DynamoDBTable.Arn  
-																													                - Effect: Allow  
-																															              Action:  
-																																                      - s3:PutObject  
-																																		                    Resource: !Sub "${DataBucket.Arn}/*"  
-																																				      
-																																				        # Step Function  
-																																					  ChildHealthWorkflow:  
-																																					      Type: AWS::StepFunctions::StateMachine  
-																																					          Properties:  
-																																						        DefinitionString:   
-																																							        !Sub |  
-																																								          {  
-																																									              "StartAt": "DataIngestion",  
-																																										                  "States": {  
-																																												                "DataIngestion": {  
-																																														                "Type": "Task",  
-																																																                "Resource": "${DataHandlerFunction.Arn}",  
-																																																		                "End": true  
-																																																				              }  
-																																																					                  }  
-																																																							            }  
-																																																								          Role: !GetAtt StepFunctionRole.Arn  
+  DynamoDBTable:  
+    Type: AWS::DynamoDB::Table  
+    Properties:  
+      TableName: ChildHealthData  
+      AttributeDefinitions:  
+        - AttributeName: id  
+          AttributeType: S  
+      KeySchema:  
+        - AttributeName: id  
+          KeyType: HASH  
+      BillingMode: PAY_PER_REQUEST  
+      
+  # Lambda Function  
+  DataHandlerFunction:  
+    Type: AWS::Serverless::Function  
+    Properties:  
+      Handler: app.app.handler  
+      Runtime: python3.8  
+      CodeUri: app/  
+      MemorySize: 128  
+      Timeout: 30  
+      Environment:  
+        DYNAMODB_TABLE: !Ref DynamoDBTable  
+        S3_BUCKET: !Ref S3Bucket  
+      Policies:  
+        - Statement:  
+            - Effect: Allow  
+              Action:  
+                - dynamodb:PutItem  
+              Resource: !GetAtt DynamoDBTable.Arn  
+            - Effect: Allow  
+              Action:  
+                - s3:PutObject  
+              Resource: !Sub "${DataBucket.Arn}/*"  
+  
+  # Step Function  
+  ChildHealthWorkflow:  
+    Type: AWS::StepFunctions::StateMachine  
+    Properties:  
+      DefinitionString:   
+        !Sub |  
+          {  
+            "StartAt": "DataIngestion",  
+            "States": {  
+              "DataIngestion": {  
+                "Type": "Task",  
+                "Resource": "${DataHandlerFunction.Arn}",  
+                "End": true  
+              }  
+            }  
+          }  
+      Role: !GetAtt StepFunctionRole.Arn  
 
-																																																									    StepFunctionRole:  
-																																																									        Type: AWS::IAM::Role  
-																																																										    Properties:  
-																																																										          AssumeRolePolicyDocument:  
-																																																											          Version: '2012-10-17'  
-																																																												          Statement:  
-																																																													            - Effect: Allow  
-																																																														                Principal:  
-																																																																              Service: states.amazonaws.com  
-																																																																	                  Action: sts:AssumeRole  
-																																																																			        Policies:  
-																																																																				        - PolicyName: StepFunctionPolicy  
-																																																																					          PolicyDocument:  
-																																																																						              Version: '2012-10-17'  
-																																																																							                  Statement:  
-																																																																									                - Effect: Allow  
-																																																																											                Action:  
-																																																																													                  - lambda:InvokeFunction  
-																																																																															                  Resource: !GetAtt DataHandlerFunction.Arn  
+  StepFunctionRole:  
+    Type: AWS::IAM::Role  
+    Properties:  
+      AssumeRolePolicyDocument:  
+        Version: '2012-10-17'  
+        Statement:  
+          - Effect: Allow  
+            Principal:  
+              Service: states.amazonaws.com  
+            Action: sts:AssumeRole  
+      Policies:  
+        - PolicyName: StepFunctionPolicy  
+          PolicyDocument:  
+            Version: '2012-10-17'  
+            Statement:  
+              - Effect: Allow  
+                Action:  
+                  - lambda:InvokeFunction  
+                Resource: !GetAtt DataHandlerFunction.Arn  
 
-																																																																																	    NotificationTopic:  
-																																																																																	        Type: AWS::SNS::Topic  
+  NotificationTopic:  
+    Type: AWS::SNS::Topic  
 
-																																																																																		  Queue:  
-																																																																																		      Type: AWS::SQS::Queue  
-																																																																																		          Properties:  
-																																																																																			        QueueName: ChildHealthDataQueue  
+  Queue:  
+    Type: AWS::SQS::Queue  
+    Properties:  
+      QueueName: ChildHealthDataQueue  
 
-																																																																																				  # CloudWatch Log Group  
-																																																																																				    LogGroup:  
-																																																																																				        Type: AWS::Logs::LogGroup  
-																																																																																					    Properties:  
-																																																																																					          LogGroupName: !Sub "/aws/lambda/${DataHandlerFunction}"  
-																																																																																						        RetentionInDays: 14  
+  # CloudWatch Log Group  
+  LogGroup:  
+    Type: AWS::Logs::LogGroup  
+    Properties:  
+      LogGroupName: !Sub "/aws/lambda/${DataHandlerFunction}"  
+      RetentionInDays: 14  
 
-																																																																																							Outputs:  
-																																																																																							  ApiGatewayURL:  
-																																																																																							      Description: "API Gateway endpoint URL"  
-																																																																																							          Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+Outputs:  
+  ApiGatewayURL:  
+    Description: "API Gateway endpoint URL"  
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
