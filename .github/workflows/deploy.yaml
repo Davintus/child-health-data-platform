@@ -56,7 +56,7 @@ jobs:
       - name: Deploy SAM  
         id: deploy  
         run: |  
-          sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --parameter-overrides LambdaFunctionS3Key="${{ env.S3_BUCKET_NAME }}/lambda/my-function.zip" 
+          sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --parameter-overrides LambdaFunctionS3Key="${{ env.S3_BUCKET_NAME }}/lambda/my-function.zip" S3Bucket="${{ env.S3_BUCKET_NAME }}" 
 
       # Step 9: Get ChangeSet Name  
       - name: Get ChangeSet Name  
