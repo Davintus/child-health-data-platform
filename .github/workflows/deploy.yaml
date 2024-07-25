@@ -15,7 +15,7 @@ jobs:
     steps:  
       # Step 1: Check out code  
       - name: Check out code  
-        uses: actions/checkout@latest  
+        uses: actions/checkout@v2  # Use version 2 for stability  
 
       # Step 2: Install AWS SAM CLI  
       - name: Install AWS SAM CLI  
@@ -30,7 +30,7 @@ jobs:
 
       # Step 4: Configure AWS credentials  
       - name: Configure AWS credentials  
-        uses: aws-actions/configure-aws-credentials@latest  
+        uses: aws-actions/configure-aws-credentials@v1  # Use version 1 for stability  
         with:  
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
@@ -58,4 +58,30 @@ jobs:
         run: |  
           sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM  
 
-      # Steps to validate and execute change set can go here if using CloudFormation directly
+      # Step 9: Get ChangeSet Name  
+      - name: Get ChangeSet Name  
+        id: get_changeset  
+        run: |  
+          CHANGES="$(aws cloudformation list-change-sets --stack-name child-health-data-platform --query "Summaries[0].ChangeSetId" --output text)"  
+          echo "ChangeSet Name: $CHANGES"  
+          echo "::set-output name=changeset::$CHANGES"
+
+      # Step 10: Check ChangeSet Status  
+      - name: Check ChangeSet Status  
+        id: check_changeset_status  
+        run: |  
+          CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"  
+          STATUS="$(aws cloudformation describe-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform --query "Status" --output text)"  
+          echo "ChangeSet Status: $STATUS"  
+        
+          if [ "$STATUS" != "CREATE_COMPLETE" ]; then  
+            echo "ChangeSet is not in a valid state to execute. Current status: $STATUS"  
+            exit 1  
+          fi  
+          
+      # Step 11: Execute ChangeSet  
+      - name: Execute ChangeSet  
+        run: |  
+          CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"   
+          aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform
+    
