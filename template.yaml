@@ -11,7 +11,11 @@ Parameters:
   DynamoDBTable:  
     Type: String
     Default: "child-health-data-table"
-    Description: "The DynamoDB table name for storing application data."  
+    Description: "The DynamoDB table name for storing application data."
+
+  LambdaFunctionS3Key:  
+    Type: String  
+    Description: "S3 key where the Lambda function code is located." 
 
 Resources:  
   DataBucket:  
