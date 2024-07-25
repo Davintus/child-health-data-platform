@@ -5,7 +5,7 @@ Description: SAM Template for Child Health Data Platform
 Parameters:  
   S3Bucket:  
     Type: String  
-    Default: "child-health-data-bucket-static-default"  # Provide a static default name  
+    # Default: "child-health-data-bucket-static-default"  # Provide a static default name  
     Description: "Unique S3 bucket name for the application. Ensure it's globally unique."
     
   DynamoDBTable:  
