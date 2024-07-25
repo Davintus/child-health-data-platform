@@ -13,71 +13,49 @@ jobs:
     runs-on: ubuntu-latest  
 
     steps:  
-    # Step 1: Check out code  
-    - name: Check out code  
-      uses: actions/checkout@v2  
+      # Step 1: Check out code  
+      - name: Check out code  
+        uses: actions/checkout@latest  
 
-    # Step 2: Install AWS SAM CLI  
-    - name: Install AWS SAM CLI  
-      run: |  
-        sudo apt-get update  
-        sudo apt-get install -y python3-pip  
-        pip3 install aws-sam-cli  
+      # Step 2: Install AWS SAM CLI  
+      - name: Install AWS SAM CLI  
+        run: |  
+          sudo apt-get update  
+          sudo apt-get install -y python3-pip  
+          pip3 install aws-sam-cli  
 
-    # Step 3: List project files for debugging  
-    - name: List project files  
-      run: ls -R  
+      # Step 3: List project files for debugging  
+      - name: List project files  
+        run: ls -R  
 
-    # Step 4: Configure AWS credentials  
-    - name: Configure AWS credentials  
-      uses: aws-actions/configure-aws-credentials@v1  
-      with:  
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
-        aws-region: 'eu-west-1'  
-    
-    # Step 5: Package SAM  
-    - name: Package SAM  
-      run: |  
-        PACKAGE_OUTPUT=$(sam package --template-file template.yaml --s3-bucket ${{ secrets.S3_BUCKET_NAME }} --output-template-file packaged.yaml)
-        echo "$PACKAGE_OUTPUT"
-        S3_KEY=$(echo "$PACKAGE_OUTPUT" | grep -oP '(?<=Uploading to ).*(?=\.\.\.)')
-        echo "S3_KEY=$S3_KEY" >> $GITHUB_ENV
+      # Step 4: Configure AWS credentials  
+      - name: Configure AWS credentials  
+        uses: aws-actions/configure-aws-credentials@latest  
+        with:  
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  
+          aws-region: 'eu-west-1'  
 
-    # Step 6: Update SAM template with the S3 key
-    - name: Update SAM template with S3 key
-      run: |
-        sed -i "s/your-code.zip/${{ env.S3_KEY }}/g" packaged.yaml
-        
-    # Step 7: Deploy SAM - create changeset without executing  
-    - name: Deploy SAM  
-      id: deploy  
-      run: |  
-        sam deploy --template-file output.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --no-execute-changeset --no-fail-on-empty-changeset --parameter-overrides DynamoDBTable=child-health-data-table  
+      # Step 5: Determine unique S3 bucket name for the deployment  
+      - name: Generate Unique S3 Bucket Name  
+        run: |  
+          echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}" >> $GITHUB_ENV  
 
-    # Step 8: Get ChangeSet Name  
-    - name: Get ChangeSet Name  
-      id: get_changeset  
-      run: |  
-        CHANGES="$(aws cloudformation list-change-sets --stack-name child-health-data-platform --query "Summaries[0].ChangeSetId" --output text)"  
-        echo "ChangeSet Name: $CHANGES"  
-        echo "::set-output name=changeset::$CHANGES"  
+      # Step 6: Package SAM and use the generated S3 bucket name  
+      - name: Package SAM  
+        id: package  
+        run: |  
+          sam package --template-file template.yaml --s3-bucket ${{ env.S3_BUCKET_NAME }} --output-template-file packaged.yaml  
 
-    # Step 9: Check ChangeSet Status  
-    - name: Check ChangeSet Status  
-      id: check_changeset_status  
-      run: |  
-        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"  
-        STATUS="$(aws cloudformation describe-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform --query "Status" --output text)"  
-        echo "ChangeSet Status: $STATUS"  
-        
-        if [ "$STATUS" != "CREATE_COMPLETE" ]; then  
-          echo "ChangeSet is not in a valid state to execute. Current status: $STATUS"  
-          exit 1  
-        fi  
+      # Step 7: Update SAM template with the S3 bucket name  
+      - name: Update SAM template with S3 bucket name  
+        run: |  
+          sed -i "s/child-health-data-bucket-static-default/${{ env.S3_BUCKET_NAME }}/g" packaged.yaml  
 
-    # Step 10: Execute ChangeSet  
-    - name: Execute ChangeSet  
-      run: |  
-        CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"
-        aws cloudformation execute-change-set --change-set-name $CHANGE_SET_NAME --stack-name child-health-data-platform
+      # Step 8: Deploy SAM  
+      - name: Deploy SAM  
+        id: deploy  
+        run: |  
+          sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM  
+
+      # Steps to validate and execute change set can go here if using CloudFormation directly
