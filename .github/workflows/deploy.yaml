@@ -39,26 +39,36 @@ jobs:
       # Step 5: Determine unique S3 bucket name for the deployment  
       - name: Generate Unique S3 Bucket Name  
         run: |  
-          echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}" >> $GITHUB_ENV  
+          echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}" >> $GITHUB_ENV 
 
-      # Step 6: Package SAM and use the generated S3 bucket name  
+      # Step 6: Zip Lambda function code  
+      - name: Zip Lambda function  
+        run: |  
+          zip -r my_function.zip app/* # Adjust this path according to your repo structure  
+
+      # Step 7: Upload Lambda function zip to S3  
+      - name: Upload Lambda Function to S3  
+        run: |  
+          aws s3 cp my_function.zip s3://${{ env.S3_BUCKET_NAME }}/lambda/my-function.zip  
+
+      # Step 8: Package SAM and use the generated S3 bucket name  
       - name: Package SAM  
         id: package  
         run: |  
           sam package --template-file template.yaml --s3-bucket ${{ env.S3_BUCKET_NAME }} --output-template-file packaged.yaml  
 
-      # Step 7: Update SAM template with the S3 bucket name  
+      # Step 9: Update SAM template with the S3 bucket name  
       - name: Update SAM template with S3 bucket name  
         run: |  
           sed -i "s/child-health-data-bucket-static-default/${{ env.S3_BUCKET_NAME }}/g" packaged.yaml  
 
-      # Step 8: Deploy SAM  
+      # Step 10: Deploy SAM  
       - name: Deploy SAM  
         id: deploy  
         run: |  
           sam deploy --template-file packaged.yaml --stack-name child-health-data-platform --capabilities CAPABILITY_IAM --parameter-overrides LambdaFunctionS3Key="${{ env.S3_BUCKET_NAME }}/lambda/my-function.zip" S3Bucket="${{ env.S3_BUCKET_NAME }}" 
 
-      # Step 9: Get ChangeSet Name  
+      # Step 11: Get ChangeSet Name  
       - name: Get ChangeSet Name  
         id: get_changeset  
         run: |  
@@ -66,7 +76,7 @@ jobs:
           echo "ChangeSet Name: $CHANGES"  
           echo "::set-output name=changeset::$CHANGES"
 
-      # Step 10: Check ChangeSet Status  
+      # Step 12: Check ChangeSet Status  
       - name: Check ChangeSet Status  
         id: check_changeset_status  
         run: |  
@@ -79,7 +89,7 @@ jobs:
             exit 1  
           fi  
           
-      # Step 11: Execute ChangeSet  
+      # Step 13: Execute ChangeSet  
       - name: Execute ChangeSet  
         run: |  
           CHANGE_SET_NAME="${{ steps.get_changeset.outputs.changeset }}"   
