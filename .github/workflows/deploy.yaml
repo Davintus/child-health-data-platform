@@ -40,8 +40,7 @@ jobs:
       - name: Generate Unique S3 Bucket Name  
         run: |  
           TIMESTAMP=$(date +%s) # Get current timestamp  
-          echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}-${TIMESTAMP}" >> $GITHUB_ENV
-        # echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}" >> $GITHUB_ENV 
+          echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}-${TIMESTAMP}" >> $GITHUB_ENV 
 
       # Step 6: Check if the S3 bucket exists  
       - name: Check if S3 Bucket Exists  
