@@ -41,6 +41,16 @@ jobs:
         run: |  
           echo "S3_BUCKET_NAME=child-health-data-bucket-${{ github.run_id }}" >> $GITHUB_ENV 
 
+      # Step 6: Check if the S3 bucket exists  
+      - name: Check if S3 Bucket Exists  
+        run: |  
+          if ! aws s3api head-bucket --bucket ${{ env.S3_BUCKET_NAME }} 2>/dev/null; then  
+            echo "Bucket does not exist, creating it."  
+            aws s3api create-bucket --bucket ${{ env.S3_BUCKET_NAME }} --region eu-west-1 --create-bucket-configuration LocationConstraint=eu-west-1  
+          else  
+            echo "Bucket exists."  
+          fi
+
       # Step 6: Zip Lambda function code  
       - name: Zip Lambda function  
         run: |  
