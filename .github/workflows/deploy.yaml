@@ -15,7 +15,7 @@ jobs:
     steps:  
       # Step 1: Check out code  
       - name: Check out code  
-        uses: actions/checkout@v2  # Use version 2 for stability  
+        uses: actions/checkout@v2  
 
       # Step 2: Install AWS SAM CLI  
       - name: Install AWS SAM CLI  
